@@ -5,6 +5,8 @@ public class SearchBar: NSObject, ObservableObject {
     
     @Published public var text: String = ""
     
+    public static let shared = SearchBar()
+    
     public let searchController: UISearchController = UISearchController(searchResultsController: nil)
     
     public override init() {
