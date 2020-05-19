@@ -20,7 +20,6 @@ extension SearchBar: UISearchResultsUpdating {
     public func updateSearchResults(for searchController: UISearchController) {
         if let searchBarText = searchController.searchBar.text {
             self.text = searchBarText
-            
         }
     }
 }
@@ -62,7 +61,6 @@ public final class ViewControllerResolver: UIViewControllerRepresentable {
     }
     
     public func updateUIViewController(_ uiViewController: ParentResolverViewController, context: Context) {
-        
     }
 }
 
@@ -83,7 +81,6 @@ public class ParentResolverViewController: UIViewController {
     
     public override func didMove(toParent parent: UIViewController?) {
         super.didMove(toParent: parent)
-        
         if let parent = parent {
             onResolve(parent)
         }
