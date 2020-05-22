@@ -1,4 +1,6 @@
+import Foundation
 import SwiftUI
+import Combine
 
 @available(iOS 13.0, *)
 public class SearchBar: NSObject, ObservableObject {
