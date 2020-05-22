@@ -2,7 +2,6 @@ import Foundation
 import SwiftUI
 import Combine
 
-@available(iOS 13.0, *)
 public class SearchBar: NSObject, ObservableObject {
     
     @Published public var text: String = ""
@@ -18,8 +17,6 @@ public class SearchBar: NSObject, ObservableObject {
     }
 }
 
-
-@available(iOS 13.0, *)
 extension SearchBar: UISearchResultsUpdating {
     public func updateSearchResults(for searchController: UISearchController) {
         if let searchBarText = searchController.searchBar.text {
@@ -28,7 +25,6 @@ extension SearchBar: UISearchResultsUpdating {
     }
 }
 
-@available(iOS 13.0, *)
 public struct SearchBarModifier: ViewModifier {
     
     public let searchBar: SearchBar
@@ -43,7 +39,6 @@ public struct SearchBarModifier: ViewModifier {
     }
 }
 
-@available(iOS 13.0, *)
 public extension View {
     func addSearchBar(_ searchBar: SearchBar) -> some View {
         return self.modifier(SearchBarModifier(searchBar: searchBar))
@@ -52,9 +47,7 @@ public extension View {
 
 public final class ViewControllerResolver: UIViewControllerRepresentable {
     
-    
     public let onResolve: (UIViewController) -> Void
-    
     
     public init(onResolve: @escaping (UIViewController) -> Void) {
         self.onResolve = onResolve
@@ -70,9 +63,7 @@ public final class ViewControllerResolver: UIViewControllerRepresentable {
 
 public class ParentResolverViewController: UIViewController {
     
-    
     public let onResolve: (UIViewController) -> Void
-    
     
     public init(onResolve: @escaping (UIViewController) -> Void) {
         self.onResolve = onResolve
