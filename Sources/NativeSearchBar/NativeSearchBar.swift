@@ -1,3 +1,11 @@
+//
+//  NativeSearchBar.swift
+//  NativeSearchBar
+//
+//  Created by Дмитрий Лисин on 19.05.2020.
+//  Copyright © 2020 Дмитрий Лисин. All rights reserved.
+//
+
 import Foundation
 import SwiftUI
 import Combine
