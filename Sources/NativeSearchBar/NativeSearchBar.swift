@@ -16,6 +16,7 @@ public class SearchBar: NSObject, ObservableObject {
     
     public static let shared = SearchBar()
     
+    #if !os(watchOS)
     public let searchController: UISearchController = UISearchController(searchResultsController: nil)
     
     public override init() {
@@ -23,8 +24,10 @@ public class SearchBar: NSObject, ObservableObject {
         self.searchController.obscuresBackgroundDuringPresentation = false
         self.searchController.searchResultsUpdater = self
     }
+    #endif
 }
 
+#if !os(watchOS)
 extension SearchBar: UISearchResultsUpdating {
     public func updateSearchResults(for searchController: UISearchController) {
         if let searchBarText = searchController.searchBar.text {
@@ -32,18 +35,24 @@ extension SearchBar: UISearchResultsUpdating {
         }
     }
 }
+#endif
 
 public struct SearchBarModifier: ViewModifier {
     
     public let searchBar: SearchBar
     
+    @ViewBuilder
     public func body(content: Content) -> some View {
+        #if os(watchOS)
+        content
+        #else
         content
             .overlay(
                 ViewControllerResolver { viewController in
                     viewController.navigationItem.searchController = self.searchBar.searchController
                 }.frame(width: 0, height: 0)
         )
+        #endif
     }
 }
 
@@ -53,6 +62,7 @@ public extension View {
     }
 }
 
+#if !os(watchOS)
 public final class ViewControllerResolver: UIViewControllerRepresentable {
     
     public let onResolve: (UIViewController) -> Void
@@ -89,4 +99,5 @@ public class ParentResolverViewController: UIViewController {
         }
     }
 }
+#endif
 

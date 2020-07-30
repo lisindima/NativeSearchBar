@@ -25,8 +25,5 @@ let package = Package(
         .target(
             name: "NativeSearchBar",
             dependencies: []),
-        .testTarget(
-            name: "NativeSearchBarTests",
-            dependencies: ["NativeSearchBar"]),
     ]
 )
