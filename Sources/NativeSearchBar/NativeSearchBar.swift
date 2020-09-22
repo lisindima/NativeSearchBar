@@ -6,92 +6,131 @@
 //  Copyright © 2020 Дмитрий Лисин. All rights reserved.
 //
 
-import Combine
-import Foundation
 import SwiftUI
-
-public class SearchBar: NSObject, ObservableObject {
-    @Published public var text: String = ""
-
-    public static let shared = SearchBar()
-
-    #if !os(watchOS)
-        public let searchController: UISearchController = UISearchController(searchResultsController: nil)
-
-        override public init() {
-            super.init()
-            searchController.obscuresBackgroundDuringPresentation = false
-            searchController.searchResultsUpdater = self
-        }
-    #endif
-}
-
-#if !os(watchOS)
-    extension SearchBar: UISearchResultsUpdating {
-        public func updateSearchResults(for searchController: UISearchController) {
-            if let searchBarText = searchController.searchBar.text {
-                text = searchBarText
-            }
-        }
-    }
-#endif
-
-public struct SearchBarModifier: ViewModifier {
-    public let searchBar: SearchBar
-
-    @ViewBuilder
-    public func body(content: Content) -> some View {
-        #if os(watchOS)
-            content
-        #else
-            content
-                .overlay(
-                    ViewControllerResolver { viewController in
-                        viewController.navigationItem.searchController = self.searchBar.searchController
-                    }.frame(width: 0, height: 0)
-                )
-        #endif
-    }
-}
+import Combine
 
 public extension View {
-    func addSearchBar(_ searchBar: SearchBar) -> some View {
-        modifier(SearchBarModifier(searchBar: searchBar))
+    func navigationBarSearch(_ searchText: Binding<String>, placeholder: String? = nil, hidesNavigationBarDuringPresentation: Bool = true, hidesSearchBarWhenScrolling: Bool = true, cancelClicked: @escaping () -> Void = {}, searchClicked: @escaping () -> Void = {}) -> some View {
+        return overlay(SearchBar<AnyView>(text: searchText, placeholder: placeholder, hidesNavigationBarDuringPresentation: hidesNavigationBarDuringPresentation, hidesSearchBarWhenScrolling: hidesSearchBarWhenScrolling, cancelClicked: cancelClicked, searchClicked: searchClicked).frame(width: 0, height: 0))
+    }
+
+    func navigationBarSearch<ResultContent: View>(_ searchText: Binding<String>, placeholder: String? = nil, hidesNavigationBarDuringPresentation: Bool = true, hidesSearchBarWhenScrolling: Bool = true, cancelClicked: @escaping () -> Void = {}, searchClicked: @escaping () -> Void = {}, @ViewBuilder resultContent: @escaping (String) -> ResultContent) -> some View {
+        return overlay(SearchBar(text: searchText, placeholder: placeholder, hidesNavigationBarDuringPresentation: hidesNavigationBarDuringPresentation, hidesSearchBarWhenScrolling: hidesSearchBarWhenScrolling, cancelClicked: cancelClicked, searchClicked: searchClicked, resultContent: resultContent).frame(width: 0, height: 0))
     }
 }
 
-#if !os(watchOS)
-    public final class ViewControllerResolver: UIViewControllerRepresentable {
-        public let onResolve: (UIViewController) -> Void
+struct SearchBar<ResultContent: View>: UIViewControllerRepresentable {
+    @Binding var text: String
+    
+    let placeholder: String?
+    let hidesNavigationBarDuringPresentation: Bool
+    let hidesSearchBarWhenScrolling: Bool
+    let cancelClicked: () -> Void
+    let searchClicked: () -> Void
+    let resultContent: (String) -> ResultContent?
 
-        public init(onResolve: @escaping (UIViewController) -> Void) {
-            self.onResolve = onResolve
-        }
-
-        public func makeUIViewController(context _: Context) -> ParentResolverViewController {
-            ParentResolverViewController(onResolve: onResolve)
-        }
-
-        public func updateUIViewController(_: ParentResolverViewController, context _: Context) {}
+    init(text: Binding<String>, placeholder: String?, hidesNavigationBarDuringPresentation: Bool, hidesSearchBarWhenScrolling: Bool, cancelClicked: @escaping () -> Void, searchClicked: @escaping () -> Void, @ViewBuilder resultContent: @escaping (String) -> ResultContent? = { _ in nil }) {
+        self._text = text
+        self.placeholder = placeholder
+        self.hidesNavigationBarDuringPresentation = hidesNavigationBarDuringPresentation
+        self.hidesSearchBarWhenScrolling = hidesSearchBarWhenScrolling
+        self.cancelClicked = cancelClicked
+        self.searchClicked = searchClicked
+        self.resultContent = resultContent
     }
 
-    public class ParentResolverViewController: UIViewController {
-        public let onResolve: (UIViewController) -> Void
+    func makeUIViewController(context: Context) -> SearchBarWrapperController {
+        return SearchBarWrapperController()
+    }
 
-        public init(onResolve: @escaping (UIViewController) -> Void) {
-            self.onResolve = onResolve
-            super.init(nibName: nil, bundle: nil)
+    func updateUIViewController(_ controller: SearchBarWrapperController, context: Context) {
+        controller.searchController = context.coordinator.searchController
+        controller.hidesSearchBarWhenScrolling = hidesSearchBarWhenScrolling
+        controller.text = text
+        if let resultView = resultContent(text) {
+            (controller.searchController?.searchResultsController as? UIHostingController<ResultContent>)?.rootView = resultView
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        return Coordinator(text: $text, placeholder: placeholder, hidesNavigationBarDuringPresentation: hidesNavigationBarDuringPresentation, resultContent: resultContent, cancelClicked: cancelClicked, searchClicked: searchClicked)
+    }
+
+    class Coordinator: NSObject, UISearchResultsUpdating, UISearchBarDelegate {
+        @Binding var text: String
+        
+        let cancelClicked: () -> Void
+        let searchClicked: () -> Void
+        let searchController: UISearchController
+
+        init(text: Binding<String>, placeholder: String?, hidesNavigationBarDuringPresentation: Bool, resultContent: (String) -> ResultContent?, cancelClicked: @escaping () -> Void, searchClicked: @escaping () -> Void) {
+            self._text = text
+            self.cancelClicked = cancelClicked
+            self.searchClicked = searchClicked
+
+            let resultView = resultContent(text.wrappedValue)
+            let searchResultController = resultView.map { UIHostingController(rootView: $0) }
+            self.searchController = UISearchController(searchResultsController: searchResultController)
+
+            super.init()
+
+            searchController.searchResultsUpdater = self
+            searchController.hidesNavigationBarDuringPresentation = hidesNavigationBarDuringPresentation
+            searchController.obscuresBackgroundDuringPresentation = false
+
+            searchController.searchBar.delegate = self
+            if let placeholder = placeholder {
+                searchController.searchBar.placeholder = placeholder
+            }
+
+            self.searchController.searchBar.text = self.text
         }
 
-        public required init?(coder _: NSCoder) {
-            fatalError("Use init(onResolve:) to instantiate ParentResolverViewController.")
-        }
-
-        override public func didMove(toParent parent: UIViewController?) {
-            super.didMove(toParent: parent)
-            if let parent = parent {
-                onResolve(parent)
+        func updateSearchResults(for searchController: UISearchController) {
+            guard let text = searchController.searchBar.text else { return }
+            DispatchQueue.main.async {
+                self.text = text
             }
         }
+
+        func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+            self.cancelClicked()
+        }
+        func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+            self.searchClicked()
+        }
     }
-#endif
+
+    class SearchBarWrapperController: UIViewController {
+        var text: String? {
+            didSet {
+                self.parent?.navigationItem.searchController?.searchBar.text = text
+            }
+        }
+
+        var searchController: UISearchController? {
+            didSet {
+                self.parent?.navigationItem.searchController = searchController
+            }
+        }
+
+        var hidesSearchBarWhenScrolling: Bool = true {
+            didSet {
+                self.parent?.navigationItem.hidesSearchBarWhenScrolling = hidesSearchBarWhenScrolling
+            }
+        }
+
+        override func viewWillAppear(_ animated: Bool) {
+            setup()
+        }
+        override func viewDidAppear(_ animated: Bool) {
+            setup()
+        }
+
+        private func setup() {
+            self.parent?.navigationItem.searchController = searchController
+            self.parent?.navigationItem.hidesSearchBarWhenScrolling = hidesSearchBarWhenScrolling
+            self.parent?.navigationController?.navigationBar.sizeToFit()
+        }
+    }
+}
