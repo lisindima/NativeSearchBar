@@ -10,7 +10,7 @@ import SwiftUI
 import Combine
 
 public extension View {
-    func navigationBarSearch(_ placeholder: String? = nil, searchText: Binding<String>, hidesNavigationBarDuringPresentation: Bool = true, hidesSearchBarWhenScrolling: Bool = true, cancelClicked: @escaping () -> Void = {}, searchClicked: @escaping () -> Void = {}) -> some View {
+    func navigationSearchBar(_ placeholder: String? = nil, searchText: Binding<String>, hidesNavigationBarDuringPresentation: Bool = true, hidesSearchBarWhenScrolling: Bool = true, cancelClicked: @escaping () -> Void = {}, searchClicked: @escaping () -> Void = {}) -> some View {
         #if os(watchOS)
         return self
         #else
@@ -18,7 +18,7 @@ public extension View {
         #endif
     }
 
-    func navigationBarSearch<ResultContent: View>(_ placeholder: String? = nil, searchText: Binding<String>, hidesNavigationBarDuringPresentation: Bool = true, hidesSearchBarWhenScrolling: Bool = true, cancelClicked: @escaping () -> Void = {}, searchClicked: @escaping () -> Void = {}, @ViewBuilder resultContent: @escaping (String) -> ResultContent) -> some View {
+    func navigationSearchBar<ResultContent: View>(_ placeholder: String? = nil, searchText: Binding<String>, hidesNavigationBarDuringPresentation: Bool = true, hidesSearchBarWhenScrolling: Bool = true, cancelClicked: @escaping () -> Void = {}, searchClicked: @escaping () -> Void = {}, @ViewBuilder resultContent: @escaping (String) -> ResultContent) -> some View {
         #if os(watchOS)
         return self
         #else
