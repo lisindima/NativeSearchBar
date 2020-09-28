@@ -11,7 +11,7 @@ import Combine
 
 public extension View {
     func navigationSearchBar(_ placeholder: String? = nil, searchText: Binding<String>, hidesNavigationBarDuringPresentation: Bool = true, hidesSearchBarWhenScrolling: Bool = true, cancelClicked: @escaping () -> Void = {}, searchClicked: @escaping () -> Void = {}) -> some View {
-        #if os(watchOS) || os(macOS)
+        #if os(watchOS)
         return self
         #else
         return overlay(SearchBar<AnyView>(text: searchText, placeholder: placeholder, hidesNavigationBarDuringPresentation: hidesNavigationBarDuringPresentation, hidesSearchBarWhenScrolling: hidesSearchBarWhenScrolling, cancelClicked: cancelClicked, searchClicked: searchClicked).frame(width: 0, height: 0))
@@ -19,7 +19,7 @@ public extension View {
     }
 
     func navigationSearchBar<ResultContent: View>(_ placeholder: String? = nil, searchText: Binding<String>, hidesNavigationBarDuringPresentation: Bool = true, hidesSearchBarWhenScrolling: Bool = true, cancelClicked: @escaping () -> Void = {}, searchClicked: @escaping () -> Void = {}, @ViewBuilder resultContent: @escaping (String) -> ResultContent) -> some View {
-        #if os(watchOS) || os(macOS)
+        #if os(watchOS)
         return self
         #else
         return overlay(SearchBar(text: searchText, placeholder: placeholder, hidesNavigationBarDuringPresentation: hidesNavigationBarDuringPresentation, hidesSearchBarWhenScrolling: hidesSearchBarWhenScrolling, cancelClicked: cancelClicked, searchClicked: searchClicked, resultContent: resultContent).frame(width: 0, height: 0))
@@ -28,7 +28,6 @@ public extension View {
 }
 
 #if !os(watchOS)
-#if !os(macOS)
 struct SearchBar<ResultContent: View>: UIViewControllerRepresentable {
     @Binding var text: String
     
@@ -144,5 +143,4 @@ struct SearchBar<ResultContent: View>: UIViewControllerRepresentable {
         }
     }
 }
-#endif
 #endif
